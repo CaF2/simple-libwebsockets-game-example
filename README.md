@@ -1,7 +1,7 @@
 # simple-libwebsockets-game
 
 A simple libwebsockets game example with a chat.
-Its very very simplistic, and is based upon http://ahoj.io/libwebsockets-simple-websocket-server.
+Its very very simplistic, and is based upon https://github.com/iamscottmoyers/simple-libwebsockets-example.
 
 ## Build
 ```bash

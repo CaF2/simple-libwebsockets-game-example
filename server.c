@@ -33,7 +33,7 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 			int dont_send=0;
 			
 			//for set and get
-			if(strlen(input)==2)
+			if(len==2)
 			{
 				if(input[0]=='G')
 				{
@@ -61,7 +61,7 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 				}
 			}
 			
-			printf("recieve %s\n",input);
+			printf("recieve [%s]\n",input);
 			memcpy( &received_payload.data[LWS_SEND_BUFFER_PRE_PADDING], in, len );
 			received_payload.len = len;
 			
