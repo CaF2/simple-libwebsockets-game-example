@@ -31,3 +31,7 @@ There is 3 sending types:
 
 * Chat history
 * Better conflict handling if more players (can be a mess)
+* Nicer frontend
+* Better client, GUI?
+* Complicate the currently awsome gameplay! Its 10/10, but you can make it better!
+* Make it smaller?
