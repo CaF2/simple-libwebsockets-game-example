@@ -2,6 +2,17 @@
 #include <string.h>
 #include <stdio.h>
 
+#define EXAMPLE_RX_BUFFER_BYTES (100)
+typedef struct Chat_memory
+{
+	unsigned char data[LWS_SEND_BUFFER_PRE_PADDING + EXAMPLE_RX_BUFFER_BYTES + LWS_SEND_BUFFER_POST_PADDING];
+	size_t len;
+}Chat_memory;
+
+Chat_memory GLOBAL_CHAT_MEMORY={0};
+
+char GLOBAL_GUESS_MEMORY=0;
+
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
 	switch( reason )
@@ -15,13 +26,6 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
 
 	return 0;
 }
-
-#define EXAMPLE_RX_BUFFER_BYTES (100)
-struct payload
-{
-	unsigned char data[LWS_SEND_BUFFER_PRE_PADDING + EXAMPLE_RX_BUFFER_BYTES + LWS_SEND_BUFFER_POST_PADDING];
-	size_t len;
-} received_payload;
 
 static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
@@ -38,22 +42,36 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 				if(input[0]=='G')
 				{
 					//compare the box character (num)
-					if(input[1]==received_payload.data[LWS_SEND_BUFFER_PRE_PADDING+1])
+					if(input[1]==GLOBAL_GUESS_MEMORY)
 					{
 						const char *msg="CADMIN     CORRECT GUESS!";
 						size_t msg_len=strlen(msg);
 						
-						memcpy( &received_payload.data[LWS_SEND_BUFFER_PRE_PADDING], msg, msg_len );
-						received_payload.len = msg_len;
+						memcpy( &GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING], msg, msg_len );
+						GLOBAL_CHAT_MEMORY.len = msg_len;
 					}
 					else
 					{
 						const char *msg="CADMIN     WRONG GUESS!";
 						size_t msg_len=strlen(msg);
 						
-						memcpy( &received_payload.data[LWS_SEND_BUFFER_PRE_PADDING], msg, msg_len );
-						received_payload.len = msg_len;
+						memcpy( &GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING], msg, msg_len );
+						GLOBAL_CHAT_MEMORY.len = msg_len;
 					}
+					
+					lws_callback_on_writable_all_protocol( lws_get_context( wsi ), lws_get_protocol( wsi ) );
+					
+					return 0;
+				}
+				else if(input[0]=='S')
+				{
+					GLOBAL_GUESS_MEMORY=input[1];
+					
+					const char *msg="CADMIN     BOX IS SET!";
+					size_t msg_len=strlen(msg);
+					
+					memcpy( &GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING], msg, msg_len );
+					GLOBAL_CHAT_MEMORY.len = msg_len;
 					
 					lws_callback_on_writable_all_protocol( lws_get_context( wsi ), lws_get_protocol( wsi ) );
 					
@@ -62,8 +80,8 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 			}
 			
 			printf("recieve [%s]\n",input);
-			memcpy( &received_payload.data[LWS_SEND_BUFFER_PRE_PADDING], in, len );
-			received_payload.len = len;
+			memcpy( &GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING], in, len );
+			GLOBAL_CHAT_MEMORY.len = len;
 			
 			if(dont_send==0)
 			{
@@ -73,14 +91,14 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 		}
 		case LWS_CALLBACK_SERVER_WRITEABLE:
 		{
-			char fun=received_payload.data[LWS_SEND_BUFFER_PRE_PADDING];
+			char fun=GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING];
 			//we wont send Gs and Ss
 			if(fun=='G' || fun=='S')
 			{
 				return 0;
 			}
 		
-			lws_write( wsi, &received_payload.data[LWS_SEND_BUFFER_PRE_PADDING], received_payload.len, LWS_WRITE_TEXT );
+			lws_write( wsi, &GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING], GLOBAL_CHAT_MEMORY.len, LWS_WRITE_TEXT );
 			break;
 		}
 		default:
