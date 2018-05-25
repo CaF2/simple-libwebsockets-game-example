@@ -21,6 +21,11 @@ make run
 
 Then navigate to localhost:8000 in your web browser. You should be able to write in a chat (Cannot handle too much load), and you should be able to guess and set a box.
 
+You can also run the client with (if you like the terminal) Currenly made for linux users :P
+```bash
+make run
+```
+
 There is 3 sending types:
 
 * 1 byte {C} (Chat) + 10 bytes (USER) + N Bytes (Message)

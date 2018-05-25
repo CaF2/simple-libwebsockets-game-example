@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 static struct lws *web_socket = NULL;
 
@@ -10,6 +12,7 @@ static struct lws *web_socket = NULL;
 
 int RUN=1;
 char *input=NULL;
+size_t input_len=0;
 char *user_name=NULL;
 size_t user_name_len=0;
 
@@ -41,28 +44,28 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 				unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + EXAMPLE_RX_BUFFER_BYTES + LWS_SEND_BUFFER_POST_PADDING];
 				unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
 				
-				size_t n=strlen(input);
+				input_len=strlen(input);
 				
 				if(strcmp(input,"q")==0)
 				{
 					RUN=0;
 					break;
 				}
-				else if(n>0)
+				else if(input_len>0)
 				{
 					if(*input=='S' || *input=='s')
 					{
 						strncpy((char*)p,input,EXAMPLE_RX_BUFFER_BYTES);
 						p[0]='S';
 						
-						lws_write( wsi, p, n, LWS_WRITE_TEXT );
+						lws_write( wsi, p, input_len, LWS_WRITE_TEXT );
 					}
 					else if(*input=='G' || *input=='g')
 					{
 						strncpy((char*)p,input,EXAMPLE_RX_BUFFER_BYTES);
 						p[0]='G';
 						
-						lws_write( wsi, p, n, LWS_WRITE_TEXT );
+						lws_write( wsi, p, input_len, LWS_WRITE_TEXT );
 					}
 					else
 					{
@@ -72,12 +75,13 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 						memcpy((char*)p+1,user_name,user_name_len);
 						strncpy((char*)p+1+10,input,EXAMPLE_RX_BUFFER_BYTES-1-10);
 						
-						lws_write( wsi, p, n+1+10, LWS_WRITE_TEXT );
+						lws_write( wsi, p, input_len+1+10, LWS_WRITE_TEXT );
 					}
 				}
 				
 				free(input);
 				input=NULL;
+				input_len=0;
 				
 				break;
 			}
@@ -117,8 +121,9 @@ void *u_loop(void *user_input)
 	while(RUN==1)
 	{
 		printf("Write something...\n");
-	
-		scanf("%ms",&input);
+		
+		//can be replaced with a better solution, if windows (such as getc ...)
+		input=readline(NULL);
 	}
 	
 	return NULL;
