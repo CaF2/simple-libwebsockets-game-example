@@ -23,7 +23,7 @@ Then navigate to localhost:8000 in your web browser. You should be able to write
 
 You can also run the client with (if you like the terminal) Currenly made for linux users :P
 ```bash
-make run
+make runc
 ```
 
 There is 3 sending types:
