@@ -108,13 +108,6 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 	return 0;
 }
 
-enum protocols
-{
-	PROTOCOL_HTTP = 0,
-	PROTOCOL_EXAMPLE,
-	PROTOCOL_COUNT
-};
-
 static struct lws_protocols protocols[] =
 {
 	/* The first protocol must always be the HTTP handler */
