@@ -1,10 +1,10 @@
 all: server
 
 server: server.c
-	gcc -g -Wall $< -o $@ `pkg-config libwebsockets --libs --cflags`
+	gcc -g -Wall $< -o $@ `pkg-config --libs --cflags libwebsockets`
 
 client: client.c
-	gcc -g -Wall $< -o $@ `pkg-config libwebsockets --libs --cflags` -lpthread -lreadline
+	gcc -g -Wall $< -o $@ `pkg-config --libs --cflags libwebsockets` -lpthread -lreadline
 
 run: all
 	./server
