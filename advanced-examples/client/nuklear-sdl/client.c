@@ -3,8 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 
 //from the gui
 void *u_loop(void *user_input);
