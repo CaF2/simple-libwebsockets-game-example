@@ -8,7 +8,9 @@
 	}
 	function pchat(user,msg)
 	{
-		document.getElementById("chat").innerHTML += "<p>"+user+"  "+msg+"</p>";
+		var objDiv=document.getElementById("chat");
+		objDiv.innerHTML += "<p>"+user+": "+msg+"</p>";
+		objDiv.scrollTop = objDiv.scrollHeight;
 	}
 
 	var socket = new WebSocket( "ws://" + document.domain + ':' + location.port, "example-protocol" );
@@ -82,7 +84,7 @@
 </script>
 <body>
 User name: <input type="text" id="userid" />
-<div id="chat"></div>
+<div id="chat" style="overflow:auto;height:300px;width:600px;"></div>
 <input type="text" id="chattext" />
 <input type="button" onClick="get_chat_content(document.getElementById('userid'),document.getElementById('chattext'));" value="Send message" />
 
