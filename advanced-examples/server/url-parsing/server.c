@@ -13,11 +13,22 @@ Chat_memory GLOBAL_CHAT_MEMORY={0};
 
 char GLOBAL_GUESS_MEMORY=0;
 
+typedef struct Lookup_tbl
+{
+	const char *file_ext;
+	const char *mime;
+}Lookup_tbl;
+
+const Lookup_tbl lookup_table[]=
+{
+	{"html","text/html"},
+	{"css","text/css"},
+	{"js","text/js"}
+};
+size_t lookup_tbl_size=sizeof(lookup_table)/sizeof(lookup_table[0]);
+
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
-	if(len>0)
-		printf("%s\n",(char*)in);
-
 	switch( reason )
 	{
 		case LWS_CALLBACK_HTTP:
@@ -26,11 +37,27 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
 			{
 				printf("Requesting file:: %s\n",(char*)in);
 				
+				const char *cur_mime=lookup_table[0].mime;
+				
 				int s=0;
 				
 				if(len>1 && access((char*)in+1, F_OK) != -1)
 				{
-					s=lws_serve_http_file( wsi, (char*)in+1, "text/html", NULL, 0 );
+					char *infile=(char*)in+1;
+					size_t infile_len=strlen(infile);
+					
+					for(int i=0;i<lookup_tbl_size;i++)
+					{
+						size_t file_ext_len=strlen(lookup_table[i].file_ext);
+					
+						if((file_ext_len+1<infile_len) && strncmp(infile+infile_len-file_ext_len,lookup_table[i].file_ext,file_ext_len)==0)
+						{
+							cur_mime=lookup_table[i].mime;
+							break;
+						}
+					}
+				
+					s=lws_serve_http_file( wsi, infile, cur_mime, NULL, 0 );
 				}
 				else
 				{
