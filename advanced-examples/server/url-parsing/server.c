@@ -136,7 +136,7 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 				}
 			}
 			
-			printf("recieve [%s]\n",input);
+			printf("recieve [%*s]\n",(int)len,input);
 			memcpy( &GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING], in, len );
 			GLOBAL_CHAT_MEMORY.len = len;
 			

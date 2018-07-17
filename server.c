@@ -18,8 +18,20 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
 	switch( reason )
 	{
 		case LWS_CALLBACK_HTTP:
-			lws_serve_http_file( wsi, "example.html", "text/html", NULL, 0 );
+		{
+			int s=lws_serve_http_file( wsi, "example.html", "text/html", NULL, 0 );
+			
+			if (s < 0 || ((s > 0) && lws_http_transaction_completed(wsi)))
+			{
+				return -1;
+			}
 			break;
+		}
+		case LWS_CALLBACK_HTTP_FILE_COMPLETION:
+			if (lws_http_transaction_completed(wsi))
+			{
+				return -1;
+			}
 		default:
 			break;
 	}
@@ -29,6 +41,8 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
 
 static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
+	printf("REASON %d\n",reason);
+
 	switch( reason )
 	{
 		case LWS_CALLBACK_RECEIVE:

@@ -14,3 +14,6 @@ runc: client
 
 clean:
 	rm -f server
+	
+valgrind:
+	valgrind  --track-origins=yes --tool=memcheck --leak-check=full ./server
