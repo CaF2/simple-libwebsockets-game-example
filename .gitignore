@@ -2,3 +2,4 @@
 /client
 /advanced-examples/server/libuv/server
 /advanced-examples/server/url-parsing/server
+/advanced-examples/server/simple-socket-sending/server

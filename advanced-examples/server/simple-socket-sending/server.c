@@ -41,11 +41,11 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 	switch( reason )
 	{
 		case LWS_CALLBACK_ESTABLISHED:
-		init_user(wsi,NULL,wsi);
-		send_user_message(wsi, "C%-10s%s",GLOBAL_USERNAME,"Hello and welcome!");
+			init_user(wsi,NULL,wsi);
+			send_user_message(wsi, "C%-10s%s",GLOBAL_USERNAME,"Hello and welcome!");
 		break;
 		case LWS_CALLBACK_CLOSED:
-		deinit_user(wsi);
+			deinit_user(wsi);
 		break;
 		case LWS_CALLBACK_RECEIVE:
 		{
@@ -77,25 +77,15 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 					return 0;
 				}
 			}
-			else
+			else if(input[0]=='C')
 			{
 				send_global_data(wsi, strndup(input,len),len,TRUE);
-				//send_user_data(wsi, strndup(input,len),len,TRUE);
 			}
 			break;
 		}
 		case LWS_CALLBACK_SERVER_WRITEABLE:
 		{
-			//char fun=GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING];
-			char fun='g';
-			//we wont send Gs and Ss
-			if(fun=='G' || fun=='S')
-			{
-				return 0;
-			}
-			
 			send_messages(wsi,reason,user,in,len);
-			//lws_write( wsi, &GLOBAL_CHAT_MEMORY.data[LWS_SEND_BUFFER_PRE_PADDING], GLOBAL_CHAT_MEMORY.len, LWS_WRITE_TEXT );
 			break;
 		}
 		default:

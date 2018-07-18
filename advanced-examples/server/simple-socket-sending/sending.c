@@ -101,16 +101,16 @@ static Chat_memory *chat_memory_init(Chat_memory *self,const char *data,size_t l
 	@returns
 		newly allocated Chat_memory struct.
 */
-static Chat_memory *chat_memory_new(const char *data,size_t len,uint8_t free_data)
-{
-	Chat_memory *self=malloc(sizeof(Chat_memory));
-	if(!self)
-	{
-		return NULL;
-	}
+/*static Chat_memory *chat_memory_new(const char *data,size_t len,uint8_t free_data)*/
+/*{*/
+/*	Chat_memory *self=malloc(sizeof(Chat_memory));*/
+/*	if(!self)*/
+/*	{*/
+/*		return NULL;*/
+/*	}*/
 
-	return chat_memory_init(self,data,len,free_data);
-}
+/*	return chat_memory_init(self,data,len,free_data);*/
+/*}*/
 
 /**
 	De-initialize the struct but does not free the input.
@@ -129,18 +129,18 @@ static void chat_memory_finalize(Chat_memory *self)
 	@param self
 		Struct to handle. Note that self will be freed inside this function
 */
-static void chat_memory_free(Chat_memory *self)
-{
-	chat_memory_finalize(self);
+/*static void chat_memory_free(Chat_memory *self)*/
+/*{*/
+/*	chat_memory_finalize(self);*/
 
-	free(self);
-}
+/*	free(self);*/
+/*}*/
 
 /////////////////////////////
 
 int send_global_data(struct lws *wsi,const char *data,size_t len, uint8_t free_data)
 {
-	printf("INSERTING:: %s\n",data);
+	//printf("INSERTING:: %s\n",data);
 
 	if(GLOBAL_SEND_TO_ALL_MEMORY==NULL)
 	{
@@ -167,8 +167,6 @@ int send_global_message_v(struct lws *wsi,const char *data, va_list args)
 {
 	char *sdata=NULL;
 	size_t len=vasprintf(&sdata,data,args);
-	
-	printf("we got %s\n",sdata);
 	
 	int ret=send_global_data(wsi,sdata,len,TRUE);
 	
@@ -358,7 +356,7 @@ int send_global_messages(struct lws *wsi, enum lws_callback_reasons reason, void
 
 	User_info *useri=orig_val;
 
-	printf("SENDING:: %d %d\n",useri->current_global_message,GLOBAL_SEND_TO_ALL_MEMORY->len);
+	//printf("SENDING:: %d %d\n",useri->current_global_message,GLOBAL_SEND_TO_ALL_MEMORY->len);
 
 	if(useri->current_global_message>=GLOBAL_SEND_TO_ALL_MEMORY->len)
 	{
@@ -371,7 +369,7 @@ int send_global_messages(struct lws *wsi, enum lws_callback_reasons reason, void
 	
 	memcpy(real_data+LWS_SEND_BUFFER_PRE_PADDING,memory->data,memory->len);
 	
-	printf("SENDINGS:: %s %ld\n",memory->data,memory->len);
+	//printf("SENDINGS:: %s %ld\n",memory->data,memory->len);
 	
 	lws_write( wsi, (unsigned char*)&real_data[LWS_SEND_BUFFER_PRE_PADDING], memory->len, LWS_WRITE_TEXT );
 	memory->history=1;
@@ -410,14 +408,14 @@ int send_user_messages(struct lws *wsi, enum lws_callback_reasons reason, void *
 	void *orig_key;
 	void *orig_val;
 	
-	printf("LOOKUP::\n");
+	//printf("LOOKUP::\n");
 	
 	if(g_hash_table_lookup_extended(GLOBAL_USER_SEND_TABLE,wsi,&orig_key,&orig_val)==FALSE)
 	{
 		return 2;
 	}
 
-	printf("GOT HERE::\n");
+	//printf("GOT HERE::\n");
 
 	User_info *useri=orig_val;
 	
@@ -428,7 +426,7 @@ int send_user_messages(struct lws *wsi, enum lws_callback_reasons reason, void *
 	
 	GArray *useria=useri->send_array;
 	
-	printf("SENDING:: %d %d\n",useri->current_user_message,useria->len);
+	//printf("SENDING:: %d %d\n",useri->current_user_message,useria->len);
 
 	if(useri->current_user_message>=useria->len)
 	{
@@ -467,7 +465,7 @@ int send_messages(struct lws *wsi, enum lws_callback_reasons reason, void *user,
 	
 	ret=send_user_messages(wsi, reason, user, in, len);
 	
-	printf("RET==%d\n",ret);
+	//printf("RET==%d\n",ret);
 	
 	if(ret==-1)
 	{
