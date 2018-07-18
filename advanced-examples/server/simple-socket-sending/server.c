@@ -42,7 +42,8 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 	{
 		case LWS_CALLBACK_ESTABLISHED:
 			init_user(wsi,NULL,wsi);
-			send_user_message(wsi, "C%-10s%s",GLOBAL_USERNAME,"Hello and welcome!");
+			send_user_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "Hello and welcome!");
+			send_user_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "Amazing weather isnt it?");
 		break;
 		case LWS_CALLBACK_CLOSED:
 			deinit_user(wsi);
@@ -59,11 +60,11 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 					//compare the box character (num)
 					if(input[1]==GLOBAL_GUESS_MEMORY)
 					{
-						send_global_message(wsi, "C%-10s%s",GLOBAL_USERNAME,"CORRECT GUESS!");
+						send_global_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "CORRECT GUESS!");
 					}
 					else
 					{
-						send_global_message(wsi, "C%-10s%s",GLOBAL_USERNAME,"WRONG GUESS!");
+						send_global_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "WRONG GUESS!");
 					}
 					
 					return 0;
@@ -72,14 +73,14 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 				{
 					GLOBAL_GUESS_MEMORY=input[1];
 					
-					send_global_message(wsi, "C%-10s%s",GLOBAL_USERNAME,"BOX IS SET!");
+					send_global_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "BOX IS SET!");
 					
 					return 0;
 				}
 			}
 			else if(input[0]=='C')
 			{
-				send_global_data(wsi, strndup(input,len),len,TRUE);
+				send_global_data(wsi, SEND_STORE, strndup(input,len),len,TRUE);
 			}
 			break;
 		}

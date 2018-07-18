@@ -91,6 +91,7 @@ static Chat_memory *chat_memory_init(Chat_memory *self,const char *data,size_t l
 
 	self->data=data;
 	self->len=len;
+	self->time=time(NULL);
 
 	return self;
 }
@@ -138,7 +139,7 @@ static void chat_memory_finalize(Chat_memory *self)
 
 /////////////////////////////
 
-int send_global_data(struct lws *wsi,const char *data,size_t len, uint8_t free_data)
+int send_global_data(struct lws *wsi, Message_type mtype, const char *data, size_t len, uint8_t free_data)
 {
 	//printf("INSERTING:: %s\n",data);
 
@@ -163,23 +164,23 @@ int send_global_data(struct lws *wsi,const char *data,size_t len, uint8_t free_d
 	return 0;
 }
 
-int send_global_message_v(struct lws *wsi,const char *data, va_list args)
+int send_global_message_v(struct lws *wsi, Message_type mtype, const char *data, va_list args)
 {
 	char *sdata=NULL;
 	size_t len=vasprintf(&sdata,data,args);
 	
-	int ret=send_global_data(wsi,sdata,len,TRUE);
+	int ret=send_global_data(wsi,mtype,sdata,len,TRUE);
 	
 	return ret;
 }
 
-int send_global_message(struct lws *wsi,const char *data,...)
+int send_global_message(struct lws *wsi, Message_type mtype, const char *data, ...)
 {
 	va_list args;
 
 	va_start(args, data);
 
-	int ret = send_global_message_v(wsi,data, args);
+	int ret = send_global_message_v(wsi,mtype,data, args);
 
 	va_end(args);
 
@@ -217,7 +218,7 @@ int deinit_user(struct lws *wsi)
 	return 0;
 }
 
-int send_user_data_from_struct(User_info *user,struct lws *wsi,const char *data,size_t len, uint8_t free_data)
+int send_user_data_from_struct(User_info *user, struct lws *wsi, Message_type mtype, const char *data, size_t len, uint8_t free_data)
 {
 	if(GLOBAL_USER_SEND_TABLE==NULL)
 	{
@@ -245,7 +246,7 @@ int send_user_data_from_struct(User_info *user,struct lws *wsi,const char *data,
 	return 0;
 }
 
-int send_user_data(struct lws *wsi,const char *data,size_t len, uint8_t free_data)
+int send_user_data(struct lws *wsi, Message_type mtype, const char *data, size_t len, uint8_t free_data)
 {
 	if(GLOBAL_USER_SEND_TABLE==NULL)
 	{
@@ -261,28 +262,28 @@ int send_user_data(struct lws *wsi,const char *data,size_t len, uint8_t free_dat
 	}
 	
 	User_info *useri=orig_val;
-	int ret=send_user_data_from_struct(useri,wsi,data,len,free_data);
+	int ret=send_user_data_from_struct(useri,wsi,mtype,data,len,free_data);
 	
 	return ret;
 }
 
-int send_user_message_v(struct lws *wsi,const char *data, va_list args)
+int send_user_message_v(struct lws *wsi, Message_type mtype, const char *data, va_list args)
 {
 	char *sdata=NULL;
 	size_t len=vasprintf(&sdata,data,args);
 	
-	int ret=send_user_data(wsi,sdata,len,TRUE);
+	int ret=send_user_data(wsi,mtype,sdata,len,TRUE);
 	
 	return ret;
 }
 
-int send_user_message(struct lws *wsi,const char *data,...)
+int send_user_message(struct lws *wsi, Message_type mtype, const char *data, ...)
 {
 	va_list args;
 
 	va_start(args, data);
 
-	int ret = send_user_message_v(wsi, data, args);
+	int ret = send_user_message_v(wsi, mtype, data, args);
 
 	va_end(args);
 
@@ -291,7 +292,7 @@ int send_user_message(struct lws *wsi,const char *data,...)
 
 /// SEND DATA
 
-int send_global_data_from_id(void *user_id,const char *data, size_t len, uint8_t free_data)
+int send_global_data_from_id(void *user_id, Message_type mtype, const char *data, size_t len, uint8_t free_data)
 {
 	//iterate users and insert to user, if matching id
 	
@@ -307,7 +308,7 @@ int send_global_data_from_id(void *user_id,const char *data, size_t len, uint8_t
 		
 		if(user->user_id==user_id)
 		{
-			send_user_data_from_struct(user,wsi,data,len,free_data);
+			send_user_data_from_struct(user,wsi,mtype,data,len,free_data);
 		}
 	}
 	
@@ -316,112 +317,97 @@ int send_global_data_from_id(void *user_id,const char *data, size_t len, uint8_t
 	return 0;
 }
 
-int send_global_message_from_id_v(void *user_id,const char *data, va_list args)
+int send_global_message_from_id_v(void *user_id, Message_type mtype, const char *data, va_list args)
 {
 	char *sdata=NULL;
 	size_t len=vasprintf(&sdata,data,args);
 	
-	int ret=send_global_data_from_id(user_id,sdata,len,TRUE);
+	int ret=send_global_data_from_id(user_id,mtype,sdata,len,TRUE);
 	
 	return ret;
 }
 
-int send_global_message_from_id(void *user_id,const char *data,...)
+int send_global_message_from_id(void *user_id, Message_type mtype, const char *data, ...)
 {
 	va_list args;
 
 	va_start(args, data);
 
-	int ret = send_global_message_from_id_v(user_id,data, args);
+	int ret = send_global_message_from_id_v(user_id,mtype,data, args);
 
 	va_end(args);
 
 	return ret;
 }
 
-int send_global_messages(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
+static Chat_memory *send_global_messages(User_info *useri, struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len,int *is_done_after)
 {
-	if(GLOBAL_SEND_TO_ALL_MEMORY==NULL || GLOBAL_USER_SEND_TABLE==NULL)
+	if(GLOBAL_SEND_TO_ALL_MEMORY==NULL || GLOBAL_USER_SEND_TABLE==NULL || useri==NULL)
 	{
-		return 1;
+		return NULL;
 	}
-	
-	void *orig_key;
-	void *orig_val;
-	
-	if(g_hash_table_lookup_extended(GLOBAL_USER_SEND_TABLE,wsi,&orig_key,&orig_val)==FALSE)
-	{
-		return 2;
-	}
-
-	User_info *useri=orig_val;
 
 	//printf("SENDING:: %d %d\n",useri->current_global_message,GLOBAL_SEND_TO_ALL_MEMORY->len);
 
 	if(useri->current_global_message>=GLOBAL_SEND_TO_ALL_MEMORY->len)
 	{
-		return 0;
+		return NULL;
 	}
-
-	Chat_memory *memory=&g_array_index(GLOBAL_SEND_TO_ALL_MEMORY, Chat_memory, useri->current_global_message);
-
-	char *real_data=malloc(LWS_SEND_BUFFER_PRE_PADDING+memory->len+LWS_SEND_BUFFER_POST_PADDING);
 	
-	memcpy(real_data+LWS_SEND_BUFFER_PRE_PADDING,memory->data,memory->len);
-	
-	//printf("SENDINGS:: %s %ld\n",memory->data,memory->len);
-	
-	lws_write( wsi, (unsigned char*)&real_data[LWS_SEND_BUFFER_PRE_PADDING], memory->len, LWS_WRITE_TEXT );
-	memory->history=1;
-	
-	free(real_data);
-	
-	useri->current_global_message++;
-	GLOBAL_DO_SEND_DATA=0;
-	
-	if(useri->current_global_message<GLOBAL_SEND_TO_ALL_MEMORY->len)
+	if(useri->current_global_message+1>GLOBAL_SEND_TO_ALL_MEMORY->len)
 	{
-		Chat_memory *memory_next=&g_array_index(GLOBAL_SEND_TO_ALL_MEMORY, Chat_memory, useri->current_global_message);
-		
-		if(memory_next->history==0)
-		{
-			lws_callback_on_writable_all_protocol( lws_get_context( wsi ), lws_get_protocol( wsi ) );
-		}
-		else
-		{
-			lws_callback_on_writable(wsi);
-		}
-		
-		return -2;
+		*is_done_after=1;
 	}
-	
-	return -1;
+	else
+	{
+		*is_done_after=0;
+	}
+
+	return &g_array_index(GLOBAL_SEND_TO_ALL_MEMORY, Chat_memory, useri->current_global_message);
+
+/*	char *real_data=malloc(LWS_SEND_BUFFER_PRE_PADDING+memory->len+LWS_SEND_BUFFER_POST_PADDING);*/
+/*	*/
+/*	memcpy(real_data+LWS_SEND_BUFFER_PRE_PADDING,memory->data,memory->len);*/
+/*	*/
+/*	//printf("SENDINGS:: %s %ld\n",memory->data,memory->len);*/
+/*	*/
+/*	lws_write( wsi, (unsigned char*)&real_data[LWS_SEND_BUFFER_PRE_PADDING], memory->len, LWS_WRITE_TEXT );*/
+/*	memory->history=1;*/
+/*	*/
+/*	free(real_data);*/
+/*	*/
+/*	useri->current_global_message++;*/
+/*	GLOBAL_DO_SEND_DATA=0;*/
+/*	*/
+/*	if(useri->current_global_message<GLOBAL_SEND_TO_ALL_MEMORY->len)*/
+/*	{*/
+/*		Chat_memory *memory_next=&g_array_index(GLOBAL_SEND_TO_ALL_MEMORY, Chat_memory, useri->current_global_message);*/
+/*		*/
+/*		if(memory_next->history==0)*/
+/*		{*/
+/*			lws_callback_on_writable_all_protocol( lws_get_context( wsi ), lws_get_protocol( wsi ) );*/
+/*		}*/
+/*		else*/
+/*		{*/
+/*			lws_callback_on_writable(wsi);*/
+/*		}*/
+/*		*/
+/*		return -2;*/
+/*	}*/
+/*	*/
+/*	return -1;*/
 }
 
-int send_user_messages(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
+static Chat_memory *send_user_messages(User_info *useri,struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len,int *is_done_after)
 {
-	if(GLOBAL_USER_SEND_TABLE==NULL)
+	if(GLOBAL_USER_SEND_TABLE==NULL || useri==NULL)
 	{
-		return 1;
+		return NULL;
 	}
-	
-	void *orig_key;
-	void *orig_val;
-	
-	//printf("LOOKUP::\n");
-	
-	if(g_hash_table_lookup_extended(GLOBAL_USER_SEND_TABLE,wsi,&orig_key,&orig_val)==FALSE)
-	{
-		return 2;
-	}
-
-	//printf("GOT HERE::\n");
-
-	User_info *useri=orig_val;
 	
 	if(useri->send_array==0)
 	{
-		return 0;
+		return NULL;
 	}
 	
 	GArray *useria=useri->send_array;
@@ -430,11 +416,47 @@ int send_user_messages(struct lws *wsi, enum lws_callback_reasons reason, void *
 
 	if(useri->current_user_message>=useria->len)
 	{
-		return 0;
+		return NULL;
+	}
+	
+	if(useri->current_user_message+1>useria->len)
+	{
+		*is_done_after=1;
+	}
+	else
+	{
+		*is_done_after=0;
 	}
 
-	Chat_memory *memory=&g_array_index(useria, Chat_memory, useri->current_user_message);
+	return &g_array_index(useria, Chat_memory, useri->current_user_message);
 
+/*	char *real_data=malloc(LWS_SEND_BUFFER_PRE_PADDING+memory->len+LWS_SEND_BUFFER_POST_PADDING+1);*/
+/*	*/
+/*	memcpy(real_data+LWS_SEND_BUFFER_PRE_PADDING,memory->data,memory->len);*/
+/*	*/
+/*	lws_write( wsi, (unsigned char*)&real_data[LWS_SEND_BUFFER_PRE_PADDING], memory->len, LWS_WRITE_TEXT );*/
+/*	memory->history=1;*/
+/*	*/
+/*	free(real_data);*/
+/*	*/
+/*	useri->current_user_message++;*/
+/*	useri->send_data=0;*/
+/*	*/
+/*	if(useri->current_user_message<useria->len)*/
+/*	{*/
+/*		//Chat_memory *memory_next=&g_array_index(useria, Chat_memory, useri->current_user_message);*/
+/*		*/
+/*		lws_callback_on_writable(wsi);*/
+/*		*/
+/*		return -2;*/
+/*	}*/
+/*	*/
+/*	return -1;*/
+}
+
+
+static int do_send_message(Chat_memory *memory,struct lws *wsi)
+{
 	char *real_data=malloc(LWS_SEND_BUFFER_PRE_PADDING+memory->len+LWS_SEND_BUFFER_POST_PADDING+1);
 	
 	memcpy(real_data+LWS_SEND_BUFFER_PRE_PADDING,memory->data,memory->len);
@@ -444,38 +466,94 @@ int send_user_messages(struct lws *wsi, enum lws_callback_reasons reason, void *
 	
 	free(real_data);
 	
+	return 0;
+}
+
+static int do_send_global_message(User_info *useri, Chat_memory *memory, struct lws *wsi)
+{
+	do_send_message(memory,wsi);
+
+	useri->current_global_message++;
+	GLOBAL_DO_SEND_DATA=0;
+	
+	return 0;
+}
+
+static int do_send_user_message(User_info *useri, Chat_memory *memory, struct lws *wsi)
+{
+	do_send_message(memory,wsi);
+
 	useri->current_user_message++;
 	useri->send_data=0;
 	
-	if(useri->current_user_message<useria->len)
-	{
-		//Chat_memory *memory_next=&g_array_index(useria, Chat_memory, useri->current_user_message);
-		
-		lws_callback_on_writable(wsi);
-		
-		return -2;
-	}
-	
-	return -1;
+	return 0;
 }
 
 int send_messages(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
-	int ret=0;
+
+	int user_messages_done_after=-1;
+	int global_messages_done_after=-1;
+
+	void *orig_key;
+	void *orig_val;
 	
-	ret=send_user_messages(wsi, reason, user, in, len);
-	
-	//printf("RET==%d\n",ret);
-	
-	if(ret==-1)
+	if(g_hash_table_lookup_extended(GLOBAL_USER_SEND_TABLE,wsi,&orig_key,&orig_val)==FALSE)
 	{
-		lws_callback_on_writable(wsi);
+		return 1;
 	}
 	
-	if(ret==0)
+	User_info *useri=orig_val;
+
+	Chat_memory *user_message=send_user_messages(useri, wsi, reason, user, in, len, &user_messages_done_after);
+	Chat_memory *global_message=send_global_messages(useri, wsi, reason, user, in, len, &global_messages_done_after);
+	
+	printf("DONE AFTER %d %d\n",user_messages_done_after,global_messages_done_after);
+	
+	if(user_message && global_message)
 	{
-		ret=send_global_messages(wsi, reason, user, in, len);
+		if(user_message->time <= global_message->time)
+		{
+			//send user message
+			do_send_user_message(useri,user_message,wsi);
+		}
+		else
+		{
+			//send global message
+			do_send_global_message(useri,global_message,wsi);
+		}
+	}
+	else if(user_message)
+	{
+		do_send_user_message(useri,user_message,wsi);
+	}
+	else if(global_message)
+	{
+		do_send_global_message(useri,global_message,wsi);
+	}
+	else
+	{
+		return 0;
 	}
 	
-	return ret;
+	if(user_messages_done_after==0 || global_messages_done_after==0)
+	{
+		Chat_memory *memory_next=NULL;
+	
+		if(global_messages_done_after==0)
+		{
+			memory_next=&g_array_index(GLOBAL_SEND_TO_ALL_MEMORY, Chat_memory, useri->current_global_message);
+		}
+		
+		if(memory_next && memory_next->history==0)
+		{
+			lws_callback_on_writable_all_protocol( lws_get_context( wsi ), lws_get_protocol( wsi ) );
+		}
+		else
+		{
+			lws_callback_on_writable(wsi);
+		}
+	}
+	
+	return 0;
 }
