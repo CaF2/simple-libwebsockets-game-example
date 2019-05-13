@@ -25,15 +25,16 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
 			{
 				return -1;
 			}
-			break;
 		}
+		break;
 		case LWS_CALLBACK_HTTP_FILE_COMPLETION:
 			if (lws_http_transaction_completed(wsi))
 			{
 				return -1;
 			}
+		break;
 		default:
-			break;
+		break;
 	}
 
 	return 0;
