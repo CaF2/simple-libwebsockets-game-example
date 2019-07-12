@@ -8,6 +8,27 @@
 const char *GLOBAL_USERNAME="ADMIN";
 char GLOBAL_GUESS_MEMORY='\0';
 
+static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len );
+static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len );
+
+static struct lws_protocols protocols[] =
+{
+	/* The first protocol must always be the HTTP handler */
+	{
+		"http-only",   /* name */
+		callback_http, /* callback */
+		0,             /* No per session data. */
+		0,             /* max frame size / rx buffer */
+	},
+	{
+		"example-protocol",
+		callback_example,
+		0,
+		EXAMPLE_RX_BUFFER_BYTES,
+	},
+	{ NULL, NULL, 0, 0 } /* terminator */
+};
+
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
 	switch( reason )
@@ -43,8 +64,8 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 	{
 		case LWS_CALLBACK_ESTABLISHED:
 			init_user(wsi,NULL,wsi);
-			send_user_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "Hello and welcome!");
-			send_user_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "Amazing weather isnt it?");
+			send_user_message(wsi, "USR", SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "Hello and welcome!");
+			send_user_message(wsi, "USR", SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "Amazing weather isnt it?");
 		break;
 		case LWS_CALLBACK_CLOSED:
 			deinit_user(wsi);
@@ -61,11 +82,11 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 					//compare the box character (num)
 					if(input[1]==GLOBAL_GUESS_MEMORY)
 					{
-						send_global_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "CORRECT GUESS!");
+						send_global_message(lws_get_context(wsi),&protocols[1], "GLOB", SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "CORRECT GUESS!");
 					}
 					else
 					{
-						send_global_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "WRONG GUESS!");
+						send_global_message(lws_get_context(wsi),&protocols[1], "GLOB", SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "WRONG GUESS!");
 					}
 					
 					return 0;
@@ -74,14 +95,14 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 				{
 					GLOBAL_GUESS_MEMORY=input[1];
 					
-					send_global_message(wsi, SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "BOX IS SET!");
+					send_global_message(lws_get_context(wsi),&protocols[1], "GLOB", SEND_STORE, "C%-10s%s", GLOBAL_USERNAME, "BOX IS SET!");
 					
 					return 0;
 				}
 			}
 			else if(input[0]=='C')
 			{
-				send_global_data(wsi, SEND_STORE, strndup(input,len),len,TRUE);
+				send_global_data(lws_get_context(wsi),&protocols[1], "GLOB", SEND_STORE, strndup(input,len),len);
 			}
 			break;
 		}
@@ -96,24 +117,6 @@ static int callback_example( struct lws *wsi, enum lws_callback_reasons reason, 
 
 	return 0;
 }
-
-static struct lws_protocols protocols[] =
-{
-	/* The first protocol must always be the HTTP handler */
-	{
-		"http-only",   /* name */
-		callback_http, /* callback */
-		0,             /* No per session data. */
-		0,             /* max frame size / rx buffer */
-	},
-	{
-		"example-protocol",
-		callback_example,
-		0,
-		EXAMPLE_RX_BUFFER_BYTES,
-	},
-	{ NULL, NULL, 0, 0 } /* terminator */
-};
 
 int main( int argc, char *argv[] )
 {
